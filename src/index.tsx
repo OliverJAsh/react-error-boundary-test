@@ -4,11 +4,13 @@ import * as React from 'react';
 import { Component, ErrorInfo } from 'react';
 import { render } from 'react-dom';
 
-class ErrorBoundary extends Component<{}, { hasError: boolean }> {
-    state = {
-        hasError: false,
-    };
+type Props = {};
+type State = { hasError: boolean };
 
+class ErrorBoundary extends Component<Props, State> {
+    state = { hasError: false };
+
+    // We define this to silence a React warning.
     static getDerivedStateFromError(error: unknown) {
         console.log('getDerivedStateFromError', { error });
 
@@ -17,10 +19,6 @@ class ErrorBoundary extends Component<{}, { hasError: boolean }> {
 
     componentDidCatch(error: unknown, errorInfo: ErrorInfo) {
         console.log('componentDidCatch', { error, errorInfo });
-
-        // Already logged due to
-        // https://github.com/facebook/react/issues/12897#issuecomment-410036991
-        // console.error(error);
     }
 
     render() {
@@ -42,23 +40,8 @@ const Boom: React.FC<{ prop: number }> = ({ prop }) => {
 const Inner: React.FC = () => {
     console.log('Inner');
 
-    return null;
+    return <div>INSIDE error boundary</div>;
 };
-
-//
-// This fixes double logging
-// https://github.com/facebook/react/issues/12897#issuecomment-410036991
-//
-// ❌
-// window.onerror = (event) => {
-//     console.log('now', event);
-
-//     event !== undefined && event instanceof Event && event.preventDefault();
-// };
-// ✅
-// window.addEventListener('error', (event) => {
-//     event.preventDefault();
-// });
 
 const App = () => {
     console.log('App');
@@ -66,30 +49,16 @@ const App = () => {
     const el = (
         <>
             <Boom prop={1} />
-            <Boom prop={2} />
             <Inner />
         </>
     );
     return (
-        <div>
-            <div>outside</div>
+        <>
+            <div>OUTSIDE error boundary</div>
 
-            {/*
-            No error boundary, logs twice
-            https://github.com/facebook/react/issues/10384
-            https://github.com/facebook/react/issues/10474
-            */}
-            {/* {el} */}
-
-            {/*
-            Error boundary, logs once
-            */}
             <ErrorBoundary>{el}</ErrorBoundary>
-        </div>
+        </>
     );
 };
 
 render(<App />, document.getElementById('root'));
-
-// render(<App />, document.getElementById('root'));
-// render(<App />, document.getElementById('root'));
